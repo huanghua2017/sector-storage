@@ -5,6 +5,11 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"os"
+	"os/exec"
+	"strconv"
+	"sync/atomic"
+	"time"
 
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
@@ -23,6 +28,9 @@ import (
 var log = logging.Logger("advmgr")
 
 var ErrNoWorkers = errors.New("no suitable workers found")
+
+// 每完成一个扇区就加1
+var uint32 finCount
 
 type URLs []string
 
@@ -258,6 +266,12 @@ func (m *Manager) NewSector(ctx context.Context, sector abi.SectorID) error {
 }
 
 func (m *Manager) AddPiece(ctx context.Context, sector abi.SectorID, existingPieces []abi.UnpaddedPieceSize, sz abi.UnpaddedPieceSize, r io.Reader) (abi.PieceInfo, error) {
+	t1 := time.Now()
+	defer func() {
+		t2 := time.Now()
+		log.Infof("dhkj AddPiece cast %v, [%v, %v]", t2.Sub(t1).String(), t1.String(), t2.String())
+	}()
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -290,6 +304,12 @@ func (m *Manager) AddPiece(ctx context.Context, sector abi.SectorID, existingPie
 }
 
 func (m *Manager) SealPreCommit1(ctx context.Context, sector abi.SectorID, ticket abi.SealRandomness, pieces []abi.PieceInfo) (out storage.PreCommit1Out, err error) {
+	t1 := time.Now()
+	defer func() {
+		t2 := time.Now()
+		log.Infof("dhkj SealPreCommit1 cast %v, [%v, %v]", t2.Sub(t1).String(), t1.String(), t2.String())
+	}()
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -312,11 +332,23 @@ func (m *Manager) SealPreCommit1(ctx context.Context, sector abi.SectorID, ticke
 		out = p
 		return nil
 	})
-
+	if os.Getenv("RUN_MODE") == "1" {
+		cmd := os.Getenv("PLEDGE_SHELL_PATH")
+		if cmd != "" && err == nil {
+			sh := exec.Command("/bin/bash", "-c", cmd)
+			log.Infof("dhkj exec pledge %s, %w", cmd, sh.Run())
+		}
+	}
 	return out, err
 }
 
 func (m *Manager) SealPreCommit2(ctx context.Context, sector abi.SectorID, phase1Out storage.PreCommit1Out) (out storage.SectorCids, err error) {
+	t1 := time.Now()
+	defer func() {
+		t2 := time.Now()
+		log.Infof("dhkj SealPreCommit2 cast %v, [%v, %v]", t2.Sub(t1).String(), t1.String(), t2.String())
+	}()
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -341,6 +373,12 @@ func (m *Manager) SealPreCommit2(ctx context.Context, sector abi.SectorID, phase
 }
 
 func (m *Manager) SealCommit1(ctx context.Context, sector abi.SectorID, ticket abi.SealRandomness, seed abi.InteractiveSealRandomness, pieces []abi.PieceInfo, cids storage.SectorCids) (out storage.Commit1Out, err error) {
+	t1 := time.Now()
+	defer func() {
+		t2 := time.Now()
+		log.Infof("dhkj SealCommit1 cast %v, [%v, %v]", t2.Sub(t1).String(), t1.String(), t2.String())
+	}()
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -368,6 +406,12 @@ func (m *Manager) SealCommit1(ctx context.Context, sector abi.SectorID, ticket a
 }
 
 func (m *Manager) SealCommit2(ctx context.Context, sector abi.SectorID, phase1Out storage.Commit1Out) (out storage.Proof, err error) {
+	t1 := time.Now()
+	defer func() {
+		t2 := time.Now()
+		log.Info("dhkj SealCommit2 cast %v, [%v, %v]", t2.Sub(t1).String(), t1.String(), t2.String())
+	}()
+
 	selector := newTaskSelector()
 
 	err = m.sched.Schedule(ctx, sector, sealtasks.TTCommit2, selector, schedNop, func(ctx context.Context, w Worker) error {
@@ -383,8 +427,28 @@ func (m *Manager) SealCommit2(ctx context.Context, sector abi.SectorID, phase1Ou
 }
 
 func (m *Manager) FinalizeSector(ctx context.Context, sector abi.SectorID, keepUnsealed []storage.Range) error {
+	t1 := time.Now()
+	defer func() {
+		t2 := time.Now()
+		log.Infof("dhkj FinalizeSector cast %v, [%v, %v]", t2.Sub(t1).String(), t1.String(), t2.String())
+	}()
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	if os.Getenv("RUN_MODE") == "0" {
+		//
+		cnt := atomic.AddUint32(&finCount, 1)
+		ncnt := uint32(strconv.Atoi(os.Getenv("MAX_SECTORS_COUNT")))
+		cmd := os.Getenv("PLEDGE_SHELL_PATH")
+		if ncnt != 0 && cmd != "" && cnt%ncnt == 0 {
+			for i := 0; i < ncnt; i++ {
+				sh := exec.Command("/bin/bash", "-c", cmd)
+				log.Infof("dhkj exec pledge %d, %s, %w", i, cmd, sh.Run())
+				time.Sleep(time.Seconds * 1)
+			}
+		}
+	}
 
 	if err := m.index.StorageLock(ctx, sector, stores.FTNone, stores.FTSealed|stores.FTUnsealed|stores.FTCache); err != nil {
 		return xerrors.Errorf("acquiring sector lock: %w", err)
