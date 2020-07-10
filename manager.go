@@ -30,7 +30,7 @@ var log = logging.Logger("advmgr")
 var ErrNoWorkers = errors.New("no suitable workers found")
 
 // 每完成一个扇区就加1
-var uint32 finCount
+var finCount uint32
 
 type URLs []string
 
@@ -445,7 +445,7 @@ func (m *Manager) FinalizeSector(ctx context.Context, sector abi.SectorID, keepU
 			for i := 0; i < ncnt; i++ {
 				sh := exec.Command("/bin/bash", "-c", cmd)
 				log.Infof("dhkj exec pledge %d, %s, %w", i, cmd, sh.Run())
-				time.Sleep(time.Seconds * 1)
+				time.Sleep(time.Second * 1)
 			}
 		}
 	}
