@@ -439,9 +439,9 @@ func (m *Manager) FinalizeSector(ctx context.Context, sector abi.SectorID, keepU
 	if os.Getenv("RUN_MODE") == "0" {
 		//
 		cnt := atomic.AddUint32(&finCount, 1)
-		ncnt := uint32(strconv.Atoi(os.Getenv("MAX_SECTORS_COUNT")))
+		ncnt, _ := strconv.Atoi(os.Getenv("MAX_SECTORS_COUNT"))
 		cmd := os.Getenv("PLEDGE_SHELL_PATH")
-		if ncnt != 0 && cmd != "" && cnt%ncnt == 0 {
+		if ncnt != 0 && cmd != "" && cnt%uint32(ncnt) == 0 {
 			for i := 0; i < ncnt; i++ {
 				sh := exec.Command("/bin/bash", "-c", cmd)
 				log.Infof("dhkj exec pledge %d, %s, %w", i, cmd, sh.Run())
