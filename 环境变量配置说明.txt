@@ -1,0 +1,3 @@
+RUN_MODE  0 单机  1 集群
+MAX_SECTORS_COUNT  单机时生效，最大并发p1数量
+PLEDGE_SHELL_PATH  添加任务的sh脚本路径
