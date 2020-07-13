@@ -292,7 +292,10 @@ func (m *Manager) AddPiece(ctx context.Context, sector abi.SectorID, existingPie
 
 	var out abi.PieceInfo
 	err = m.sched.Schedule(ctx, sector, sealtasks.TTAddPiece, selector, schedNop, func(ctx context.Context, w Worker) error {
+		t3 := time.Now()
 		p, err := w.AddPiece(ctx, sector, existingPieces, sz, r)
+		t4 := time.Now()
+		log.Infof("dhkj AddPiece real cast %v, [%v, %v]", t4.Sub(t3).String(), t3.String(), t4.String())
 		if err != nil {
 			return err
 		}
@@ -325,7 +328,10 @@ func (m *Manager) SealPreCommit1(ctx context.Context, sector abi.SectorID, ticke
 	}
 
 	err = m.sched.Schedule(ctx, sector, sealtasks.TTPreCommit1, selector, schedFetch(sector, stores.FTUnsealed, stores.PathSealing, stores.AcquireMove), func(ctx context.Context, w Worker) error {
+		t3 := time.Now()
 		p, err := w.SealPreCommit1(ctx, sector, ticket, pieces)
+		t4 := time.Now()
+		log.Infof("dhkj SealPreCommit1 real cast %v, [%v, %v]", t4.Sub(t3).String(), t3.String(), t4.String())
 		if err != nil {
 			return err
 		}
@@ -362,7 +368,10 @@ func (m *Manager) SealPreCommit2(ctx context.Context, sector abi.SectorID, phase
 	}
 
 	err = m.sched.Schedule(ctx, sector, sealtasks.TTPreCommit2, selector, schedFetch(sector, stores.FTCache|stores.FTSealed, stores.PathSealing, stores.AcquireMove), func(ctx context.Context, w Worker) error {
+		t3 := time.Now()
 		p, err := w.SealPreCommit2(ctx, sector, phase1Out)
+		t4 := time.Now()
+		log.Infof("dhkj SealPreCommit2 real cast %v, [%v, %v]", t4.Sub(t3).String(), t3.String(), t4.String())
 		if err != nil {
 			return err
 		}
@@ -395,7 +404,10 @@ func (m *Manager) SealCommit1(ctx context.Context, sector abi.SectorID, ticket a
 	}
 
 	err = m.sched.Schedule(ctx, sector, sealtasks.TTCommit1, selector, schedFetch(sector, stores.FTCache|stores.FTSealed, stores.PathSealing, stores.AcquireMove), func(ctx context.Context, w Worker) error {
+		t3 := time.Now()
 		p, err := w.SealCommit1(ctx, sector, ticket, seed, pieces, cids)
+		t4 := time.Now()
+		log.Infof("dhkj SealCommit1 real cast %v, [%v, %v]", t4.Sub(t3).String(), t3.String(), t4.String())
 		if err != nil {
 			return err
 		}
@@ -415,7 +427,10 @@ func (m *Manager) SealCommit2(ctx context.Context, sector abi.SectorID, phase1Ou
 	selector := newTaskSelector()
 
 	err = m.sched.Schedule(ctx, sector, sealtasks.TTCommit2, selector, schedNop, func(ctx context.Context, w Worker) error {
+		t3 := time.Now()
 		p, err := w.SealCommit2(ctx, sector, phase1Out)
+		t4 := time.Now()
+		log.Infof("dhkj SealCommit2 real cast %v, [%v, %v]", t4.Sub(t3).String(), t3.String(), t4.String())
 		if err != nil {
 			return err
 		}
