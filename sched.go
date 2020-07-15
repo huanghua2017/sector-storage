@@ -3,7 +3,9 @@ package sectorstorage
 import (
 	"container/heap"
 	"context"
+	"os"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
 
@@ -254,6 +256,17 @@ func (sh *scheduler) maybeSchedRequest(req *workerRequest) (bool, error) {
 			continue
 		}
 
+		// p1 任务分配特殊处理
+		if req.taskType == sealtasks.TTPreCommit1 {
+			ncnt, _ := strconv.Atoi(os.Getenv("MAX_SECTORS_COUNT"))
+			ncpu := int32(worker.preparing.cpuUse)
+			p1cnt := ncpu % 40
+			if p1cnt >= ncnt {
+				log.Warnf("dhkj %+v, %s p1 >= MAX_SECTORS_COUNT (%v, %v)", req.sector, worker.info.Hostname, p1cnt, ncnt)
+				continue
+			}
+		}
+
 		acceptable = append(acceptable, wid)
 	}
 
@@ -288,6 +301,7 @@ func (sh *scheduler) maybeSchedRequest(req *workerRequest) (bool, error) {
 }
 
 func (sh *scheduler) assignWorker(wid WorkerID, w *workerHandle, req *workerRequest) error {
+	log.Infof("dhkj assignWorker %+v, %s => %s", req.sector, req.taskType, w.info.Hostname)
 	needRes := ResourceTable[req.taskType][sh.spt]
 
 	w.preparing.add(w.info.Resources, needRes)
