@@ -259,10 +259,10 @@ func (sh *scheduler) maybeSchedRequest(req *workerRequest) (bool, error) {
 		// p1 任务分配特殊处理
 		if req.taskType == sealtasks.TTPreCommit1 {
 			ncnt, _ := strconv.Atoi(os.Getenv("MAX_SECTORS_COUNT"))
-			ncpu := int(worker.preparing.cpuUse)
+			ncpu := int(worker.preparing.cpuUse + work.active.cpuUse)
 			p1cnt := ncpu % 40
 			if p1cnt >= ncnt {
-				log.Warnf("dhkj %+v, %s p1 >= MAX_SECTORS_COUNT (%v, %v)", req.sector, worker.info.Hostname, p1cnt, ncnt)
+				log.Warnf("dhkj %+v, %s p1 >= MAX_SECTORS_COUNT (%v, %v) [%v, %v]", req.sector, worker.info.Hostname, p1cnt, ncnt, worker.preparing.cpuUse, work.active.cpuUse)
 				continue
 			}
 		}
