@@ -269,7 +269,7 @@ func (m *Manager) AddPiece(ctx context.Context, sector abi.SectorID, existingPie
 	t1 := time.Now()
 	defer func() {
 		t2 := time.Now()
-		log.Infof("dhkj AddPiece cast %v, [%v, %v]", t2.Sub(t1).String(), t1.String(), t2.String())
+		log.Infof("dhkj %v AddPiece cast %v, [%v, %v]", sector, t2.Sub(t1).String(), t1.String(), t2.String())
 	}()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -295,7 +295,7 @@ func (m *Manager) AddPiece(ctx context.Context, sector abi.SectorID, existingPie
 		t3 := time.Now()
 		p, err := w.AddPiece(ctx, sector, existingPieces, sz, r)
 		t4 := time.Now()
-		log.Infof("dhkj AddPiece real cast %v, [%v, %v]", t4.Sub(t3).String(), t3.String(), t4.String())
+		log.Infof("dhkj %v AddPiece real cast %v, [%v, %v]", sector, t4.Sub(t3).String(), t3.String(), t4.String())
 		if err != nil {
 			return err
 		}
@@ -310,7 +310,7 @@ func (m *Manager) SealPreCommit1(ctx context.Context, sector abi.SectorID, ticke
 	t1 := time.Now()
 	defer func() {
 		t2 := time.Now()
-		log.Infof("dhkj SealPreCommit1 cast %v, [%v, %v]", t2.Sub(t1).String(), t1.String(), t2.String())
+		log.Infof("dhkj %v SealPreCommit1 cast %v, [%v, %v]", sector, t2.Sub(t1).String(), t1.String(), t2.String())
 	}()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -331,7 +331,7 @@ func (m *Manager) SealPreCommit1(ctx context.Context, sector abi.SectorID, ticke
 		t3 := time.Now()
 		p, err := w.SealPreCommit1(ctx, sector, ticket, pieces)
 		t4 := time.Now()
-		log.Infof("dhkj SealPreCommit1 real cast %v, [%v, %v]", t4.Sub(t3).String(), t3.String(), t4.String())
+		log.Infof("dhkj %v SealPreCommit1 real cast %v, [%v, %v]", sector, t4.Sub(t3).String(), t3.String(), t4.String())
 		if err != nil {
 			return err
 		}
@@ -352,7 +352,7 @@ func (m *Manager) SealPreCommit2(ctx context.Context, sector abi.SectorID, phase
 	t1 := time.Now()
 	defer func() {
 		t2 := time.Now()
-		log.Infof("dhkj SealPreCommit2 cast %v, [%v, %v]", t2.Sub(t1).String(), t1.String(), t2.String())
+		log.Infof("dhkj %v SealPreCommit2 cast %v, [%v, %v]", sector, t2.Sub(t1).String(), t1.String(), t2.String())
 	}()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -372,7 +372,7 @@ func (m *Manager) SealPreCommit2(ctx context.Context, sector abi.SectorID, phase
 		t3 := time.Now()
 		p, err := w.SealPreCommit2(ctx, sector, phase1Out)
 		t4 := time.Now()
-		log.Infof("dhkj SealPreCommit2 real cast %v, [%v, %v]", t4.Sub(t3).String(), t3.String(), t4.String())
+		log.Infof("dhkj %v SealPreCommit2 real cast %v, [%v, %v]", sector, t4.Sub(t3).String(), t3.String(), t4.String())
 		if err != nil {
 			return err
 		}
@@ -386,7 +386,7 @@ func (m *Manager) SealCommit1(ctx context.Context, sector abi.SectorID, ticket a
 	t1 := time.Now()
 	defer func() {
 		t2 := time.Now()
-		log.Infof("dhkj SealCommit1 cast %v, [%v, %v]", t2.Sub(t1).String(), t1.String(), t2.String())
+		log.Infof("dhkj %v SealCommit1 cast %v, [%v, %v]", sector, t2.Sub(t1).String(), t1.String(), t2.String())
 	}()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -408,7 +408,7 @@ func (m *Manager) SealCommit1(ctx context.Context, sector abi.SectorID, ticket a
 		t3 := time.Now()
 		p, err := w.SealCommit1(ctx, sector, ticket, seed, pieces, cids)
 		t4 := time.Now()
-		log.Infof("dhkj SealCommit1 real cast %v, [%v, %v]", t4.Sub(t3).String(), t3.String(), t4.String())
+		log.Infof("dhkj %v SealCommit1 real cast %v, [%v, %v]", sector, t4.Sub(t3).String(), t3.String(), t4.String())
 		if err != nil {
 			return err
 		}
@@ -422,7 +422,7 @@ func (m *Manager) SealCommit2(ctx context.Context, sector abi.SectorID, phase1Ou
 	t1 := time.Now()
 	defer func() {
 		t2 := time.Now()
-		log.Info("dhkj SealCommit2 cast %v, [%v, %v]", t2.Sub(t1).String(), t1.String(), t2.String())
+		log.Info("dhkj %v SealCommit2 cast %v, [%v, %v]", sector, t2.Sub(t1).String(), t1.String(), t2.String())
 	}()
 
 	selector := newTaskSelector()
@@ -431,7 +431,7 @@ func (m *Manager) SealCommit2(ctx context.Context, sector abi.SectorID, phase1Ou
 		t3 := time.Now()
 		p, err := w.SealCommit2(ctx, sector, phase1Out)
 		t4 := time.Now()
-		log.Infof("dhkj SealCommit2 real cast %v, [%v, %v]", t4.Sub(t3).String(), t3.String(), t4.String())
+		log.Infof("dhkj %v SealCommit2 real cast %v, [%v, %v]", sector, t4.Sub(t3).String(), t3.String(), t4.String())
 		if err != nil {
 			return err
 		}
@@ -446,7 +446,7 @@ func (m *Manager) FinalizeSector(ctx context.Context, sector abi.SectorID, keepU
 	t1 := time.Now()
 	defer func() {
 		t2 := time.Now()
-		log.Infof("dhkj FinalizeSector cast %v, [%v, %v]", t2.Sub(t1).String(), t1.String(), t2.String())
+		log.Infof("dhkj %v FinalizeSector cast %v, [%v, %v]", sector, t2.Sub(t1).String(), t1.String(), t2.String())
 	}()
 
 	ctx, cancel := context.WithCancel(ctx)
