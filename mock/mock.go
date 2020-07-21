@@ -161,7 +161,7 @@ func (mgr *SectorMgr) SealPreCommit1(ctx context.Context, sid abi.SectorID, tick
 		return nil, err
 	}
 
-	cc, _, err := commcid.CIDToCommitment(commd)
+	_, _, cc, err := commcid.CIDToCommitment(commd)
 	if err != nil {
 		panic(err)
 	}
@@ -175,14 +175,14 @@ func (mgr *SectorMgr) SealPreCommit2(ctx context.Context, sid abi.SectorID, phas
 	db := []byte(string(phase1Out))
 	db[0] ^= 'd'
 
-	d := commcid.DataCommitmentV1ToCID(db)
+	d, _ := commcid.DataCommitmentV1ToCID(db)
 
 	commr := make([]byte, 32)
 	for i := range db {
 		commr[32-(i+1)] = db[i]
 	}
 
-	commR := commcid.ReplicaCommitmentV1ToCID(commr)
+	commR, _ := commcid.ReplicaCommitmentV1ToCID(commr)
 
 	return storage.SectorCids{
 		Unsealed: d,
@@ -320,7 +320,7 @@ func (mgr *SectorMgr) FinalizeSector(context.Context, abi.SectorID, []storage.Ra
 }
 
 func (mgr *SectorMgr) ReleaseUnsealed(ctx context.Context, sector abi.SectorID, safeToFree []storage.Range) error {
-	panic("implement me")
+	return nil
 }
 
 func (mgr *SectorMgr) Remove(ctx context.Context, sector abi.SectorID) error {
