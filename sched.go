@@ -239,6 +239,9 @@ func (sh *scheduler) trySched() {
 
 	*/
 
+	//
+	time.Sleep(time.Millisecond * time.Duration(rand.Int63n(1000)))
+
 	windows := make([]schedWindow, len(sh.openWindows))
 	acceptableWindows := make([][]int, sh.schedQueue.Len())
 
