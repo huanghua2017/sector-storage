@@ -239,9 +239,6 @@ func (sh *scheduler) trySched() {
 
 	*/
 
-	//
-	time.Sleep(time.Millisecond * time.Duration(rand.Int63n(1000)))
-
 	windows := make([]schedWindow, len(sh.openWindows))
 	acceptableWindows := make([][]int, sh.schedQueue.Len())
 
@@ -273,10 +270,11 @@ func (sh *scheduler) trySched() {
 			// p1 任务分配特殊处理
 			if task.taskType == sealtasks.TTPreCommit1 {
 				ncnt, _ := strconv.Atoi(os.Getenv("MAX_SECTORS_COUNT"))
-				ncpu := int(worker.preparing.cpuUse + worker.active.cpuUse)
+				ncpu := int(worker.preparing.cpuUse+worker.active.cpuUse, windows[wnd].allocated.cpuUse)
 				p1cnt := ncpu % 40
 				if p1cnt >= ncnt {
-					log.Warnf("dhkj %+v, %s p1 >= MAX_SECTORS_COUNT (%v, %v) [preparing:%v, active:%v]", task.sector, worker.info.Hostname, p1cnt, ncnt, worker.preparing.cpuUse, worker.active.cpuUse)
+					log.Warnf("dhkj %+v, %s p1 >= MAX_SECTORS_COUNT (%v, %v) [preparing:%v, active:%v, allocated:%v]",
+						task.sector, worker.info.Hostname, p1cnt, ncnt, worker.preparing.cpuUse, worker.active.cpuUse, windows[wnd].allocated.cpuUse)
 					continue
 				}
 			}
@@ -469,6 +467,19 @@ func (sh *scheduler) runWorker(wid WorkerID) {
 
 					sh.workersLk.Lock()
 					ok := worker.preparing.canHandleRequest(needRes, wid, worker.info.Resources)
+
+					// p1 任务分配特殊处理
+					if todo.taskType == sealtasks.TTPreCommit1 {
+						ncnt, _ := strconv.Atoi(os.Getenv("MAX_SECTORS_COUNT"))
+						ncpu := int(worker.preparing.cpuUse + worker.active.cpuUse)
+						p1cnt := ncpu % 40
+						if p1cnt >= ncnt {
+							log.Warnf("dhkj runWorker %+v, %s p1 >= MAX_SECTORS_COUNT (%v, %v) [preparing:%v, active:%v]",
+								todo.sector, worker.info.Hostname, p1cnt, ncnt, worker.preparing.cpuUse, worker.active.cpuUse)
+							ok = false
+						}
+					}
+
 					if !ok {
 						sh.workersLk.Unlock()
 						break assignLoop
