@@ -1,7 +1,6 @@
 package sectorstorage
 
 import (
-	"container/heap"
 	"context"
 	"fmt"
 	"math/rand"
@@ -71,6 +70,8 @@ type scheduler struct {
 	schedQueue  *requestQueue
 	openWindows []*schedWindowRequest
 
+	info chan func(interface{})
+
 	closing  chan struct{}
 	closed   chan struct{}
 	testSync chan struct{} // used for testing
@@ -124,8 +125,9 @@ type workerRequest struct {
 
 	index int // The index of the item in the heap.
 
-	ret chan<- workerResponse
-	ctx context.Context
+	indexHeap int
+	ret       chan<- workerResponse
+	ctx       context.Context
 }
 
 type workerResponse struct {
@@ -148,6 +150,8 @@ func newScheduler(spt abi.RegisteredSealProof) *scheduler {
 		windowRequests: make(chan *schedWindowRequest),
 
 		schedQueue: &requestQueue{},
+
+		info: make(chan func(interface{})),
 
 		closing: make(chan struct{}),
 		closed:  make(chan struct{}),
@@ -194,6 +198,17 @@ func (r *workerRequest) respond(err error) {
 	}
 }
 
+type SchedDiagRequestInfo struct {
+	Sector   abi.SectorID
+	TaskType sealtasks.TaskType
+	Priority int
+}
+
+type SchedDiagInfo struct {
+	Requests    []SchedDiagRequestInfo
+	OpenWindows []WorkerID
+}
+
 func (sh *scheduler) runSched() {
 	defer close(sh.closed)
 
@@ -208,7 +223,7 @@ func (sh *scheduler) runSched() {
 			sh.dropWorker(wid)
 
 		case req := <-sh.schedule:
-			heap.Push(sh.schedQueue, req)
+			sh.schedQueue.Push(req)
 			sh.trySched()
 
 			if sh.testSync != nil {
@@ -218,11 +233,34 @@ func (sh *scheduler) runSched() {
 			sh.openWindows = append(sh.openWindows, req)
 			sh.trySched()
 
+		case ireq := <-sh.info:
+			ireq(sh.diag())
+
 		case <-sh.closing:
 			sh.schedClose()
 			return
 		}
 	}
+}
+
+func (sh *scheduler) diag() SchedDiagInfo {
+	var out SchedDiagInfo
+
+	for sqi := 0; sqi < sh.schedQueue.Len(); sqi++ {
+		task := (*sh.schedQueue)[sqi]
+
+		out.Requests = append(out.Requests, SchedDiagRequestInfo{
+			Sector:   task.sector,
+			TaskType: task.taskType,
+			Priority: task.priority,
+		})
+	}
+
+	for _, window := range sh.openWindows {
+		out.OpenWindows = append(out.OpenWindows, window.worker)
+	}
+
+	return out
 }
 
 func (sh *scheduler) trySched() {
@@ -245,13 +283,14 @@ func (sh *scheduler) trySched() {
 	windows := make([]schedWindow, len(sh.openWindows))
 	acceptableWindows := make([][]int, sh.schedQueue.Len())
 
-	log.Debugf("trySched %d queued; %d open windows", sh.schedQueue.Len(), len(windows))
+	log.Debugf("SCHED %d queued; %d open windows", sh.schedQueue.Len(), len(windows))
 
 	// Step 1
 	for sqi := 0; sqi < sh.schedQueue.Len(); sqi++ {
 		task := (*sh.schedQueue)[sqi]
 		needRes := ResourceTable[task.taskType][sh.spt]
 
+		task.indexHeap = sqi
 		for wnd, windowRequest := range sh.openWindows {
 			worker := sh.workers[windowRequest.worker]
 
@@ -318,6 +357,9 @@ func (sh *scheduler) trySched() {
 		})
 	}
 
+	log.Debugf("SCHED windows: %+v", windows)
+	log.Debugf("SCHED Acceptable win: %+v", acceptableWindows)
+
 	// Step 2
 	scheduled := 0
 
@@ -326,18 +368,18 @@ func (sh *scheduler) trySched() {
 		needRes := ResourceTable[task.taskType][sh.spt]
 
 		selectedWindow := -1
-		for _, wnd := range acceptableWindows[sqi+scheduled] {
+		for _, wnd := range acceptableWindows[task.indexHeap] {
 			wid := sh.openWindows[wnd].worker
 			wr := sh.workers[wid].info.Resources
 
-			log.Debugf("trySched try assign sqi:%d sector %d to window %d", sqi, task.sector.Number, wnd)
+			log.Debugf("SCHED try assign sqi:%d sector %d to window %d", sqi, task.sector.Number, wnd)
 
 			// TODO: allow bigger windows
 			if !windows[wnd].allocated.canHandleRequest(needRes, wid, wr) {
 				continue
 			}
 
-			log.Debugf("trySched ASSIGNED sqi:%d sector %d to window %d", sqi, task.sector.Number, wnd)
+			log.Debugf("SCHED ASSIGNED sqi:%d sector %d to window %d", sqi, task.sector.Number, wnd)
 
 			windows[wnd].allocated.add(wr, needRes)
 
@@ -352,7 +394,7 @@ func (sh *scheduler) trySched() {
 
 		windows[selectedWindow].todo = append(windows[selectedWindow].todo, task)
 
-		heap.Remove(sh.schedQueue, sqi)
+		sh.schedQueue.Remove(sqi)
 		sqi--
 		scheduled++
 	}
@@ -647,6 +689,21 @@ func (sh *scheduler) schedClose() {
 
 	for i, w := range sh.workers {
 		sh.workerCleanup(i, w)
+	}
+}
+
+func (sh *scheduler) Info(ctx context.Context) (interface{}, error) {
+	ch := make(chan interface{}, 1)
+
+	sh.info <- func(res interface{}) {
+		ch <- res
+	}
+
+	select {
+	case res := <-ch:
+		return res, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
 	}
 }
 

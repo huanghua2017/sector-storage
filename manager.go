@@ -84,6 +84,8 @@ type Manager struct {
 }
 
 type SealerConfig struct {
+	ParallelFetchLimit int
+
 	// Local worker config
 	AllowPreCommit1 bool
 	AllowPreCommit2 bool
@@ -104,7 +106,7 @@ func New(ctx context.Context, ls stores.LocalStorage, si stores.SectorIndex, cfg
 		return nil, xerrors.Errorf("creating prover instance: %w", err)
 	}
 
-	stor := stores.NewRemote(lstor, si, http.Header(sa))
+	stor := stores.NewRemote(lstor, si, http.Header(sa), sc.ParallelFetchLimit)
 
 	m := &Manager{
 		scfg: cfg,
@@ -570,6 +572,10 @@ func (m *Manager) StorageLocal(ctx context.Context) (map[stores.ID]string, error
 
 func (m *Manager) FsStat(ctx context.Context, id stores.ID) (fsutil.FsStat, error) {
 	return m.storage.FsStat(ctx, id)
+}
+
+func (m *Manager) SchedDiag(ctx context.Context) (interface{}, error) {
+	return m.sched.Info(ctx)
 }
 
 func (m *Manager) Close(ctx context.Context) error {
