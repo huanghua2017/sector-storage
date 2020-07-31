@@ -311,18 +311,6 @@ func (sh *scheduler) trySched() {
 				continue
 			}
 
-			// p1 任务分配特殊处理
-			if task.taskType == sealtasks.TTPreCommit1 {
-				ncnt, _ := strconv.Atoi(os.Getenv("MAX_SECTORS_COUNT"))
-				ncpu := int(worker.preparing.cpuUse + worker.active.cpuUse + windows[wnd].allocated.cpuUse)
-				p1cnt := ncpu % 40
-				if p1cnt >= ncnt {
-					log.Warnf("dhkj %+v, %s p1 >= MAX_SECTORS_COUNT (%v, %v) [preparing:%v, active:%v, allocated:%v]",
-						task.sector, worker.info.Hostname, p1cnt, ncnt, worker.preparing.cpuUse, worker.active.cpuUse, windows[wnd].allocated.cpuUse)
-					continue
-				}
-			}
-
 			acceptableWindows[sqi] = append(acceptableWindows[sqi], wnd)
 		}
 
@@ -377,6 +365,18 @@ func (sh *scheduler) trySched() {
 			// TODO: allow bigger windows
 			if !windows[wnd].allocated.canHandleRequest(needRes, wid, wr) {
 				continue
+			}
+
+			// p1 任务分配特殊处理
+			if task.taskType == sealtasks.TTPreCommit1 {
+				ncnt, _ := strconv.Atoi(os.Getenv("MAX_SECTORS_COUNT"))
+				ncpu := int(sh.workers[wid].preparing.cpuUse + sh.workers[wid].active.cpuUse + windows[wnd].allocated.cpuUse)
+				p1cnt := ncpu % 40
+				if p1cnt >= ncnt {
+					log.Warnf("dhkj %+v, %s p1 >= MAX_SECTORS_COUNT (%v, %v) [preparing:%v, active:%v, allocated:%v]",
+						task.sector, sh.workers[wid].info.Hostname, p1cnt, ncnt, sh.workers[wid].preparing.cpuUse, sh.workers[wid].active.cpuUse, windows[wnd].allocated.cpuUse)
+					continue
+				}
 			}
 
 			log.Debugf("SCHED ASSIGNED sqi:%d sector %d to window %d", sqi, task.sector.Number, wnd)
@@ -514,18 +514,6 @@ func (sh *scheduler) runWorker(wid WorkerID) {
 
 					sh.workersLk.Lock()
 					ok := worker.preparing.canHandleRequest(needRes, wid, worker.info.Resources)
-
-					// // p1 任务分配特殊处理
-					// if todo.taskType == sealtasks.TTPreCommit1 {
-					// 	ncnt, _ := strconv.Atoi(os.Getenv("MAX_SECTORS_COUNT"))
-					// 	ncpu := int(worker.preparing.cpuUse + worker.active.cpuUse)
-					// 	p1cnt := ncpu % 40
-					// 	if p1cnt >= ncnt {
-					// 		log.Warnf("dhkj runWorker %+v, %s p1 >= MAX_SECTORS_COUNT (%v, %v) [preparing:%v, active:%v]",
-					// 			todo.sector, worker.info.Hostname, p1cnt, ncnt, worker.preparing.cpuUse, worker.active.cpuUse)
-					// 		ok = false
-					// 	}
-					// }
 
 					if !ok {
 						sh.workersLk.Unlock()
