@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"os"
 	"sort"
-	"strconv"
 	"sync"
 	"time"
 
@@ -369,12 +367,21 @@ func (sh *scheduler) trySched() {
 
 			// p1 任务分配特殊处理
 			if task.taskType == sealtasks.TTPreCommit1 {
-				ncnt, _ := strconv.Atoi(os.Getenv("MAX_SECTORS_COUNT"))
+				ncnt := 1
+				gb := wr.MemPhysical / (1 << 30)
+				if gb > 200 && gb < 300 {
+					ncnt = 3
+				} else if gb > 500 && gb < 600 {
+					ncnt = 6
+				} else if gb > 900 {
+					ncnt = 12
+				}
+				//ncnt, _ := strconv.Atoi(os.Getenv("MAX_SECTORS_COUNT"))
 				ncpu := int(sh.workers[wid].preparing.cpuUse + sh.workers[wid].active.cpuUse + windows[wnd].allocated.cpuUse)
 				p1cnt := ncpu % 40
 				if p1cnt >= ncnt {
-					log.Warnf("dhkj %+v, %s p1 >= MAX_SECTORS_COUNT (%v, %v) [preparing:%v, active:%v, allocated:%v]",
-						task.sector, sh.workers[wid].info.Hostname, p1cnt, ncnt, sh.workers[wid].preparing.cpuUse, sh.workers[wid].active.cpuUse, windows[wnd].allocated.cpuUse)
+					log.Warnf("dhkj %+v, %s p1 >= MAX_SECTORS_COUNT (%v, %v, mem:%vGB) [preparing:%v, active:%v, allocated:%v]",
+						task.sector, sh.workers[wid].info.Hostname, p1cnt, ncnt, gb, sh.workers[wid].preparing.cpuUse, sh.workers[wid].active.cpuUse, windows[wnd].allocated.cpuUse)
 					continue
 				}
 			}
