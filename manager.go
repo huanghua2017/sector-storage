@@ -3,7 +3,6 @@ package sectorstorage
 import (
 	"context"
 	"errors"
-	"github.com/filecoin-project/sector-storage/fsutil"
 	"io"
 	"net/http"
 	"os"
@@ -11,6 +10,8 @@ import (
 	"strconv"
 	"sync/atomic"
 	"time"
+
+	"github.com/filecoin-project/sector-storage/fsutil"
 
 	"github.com/ipfs/go-cid"
 	logging "github.com/ipfs/go-log/v2"
@@ -301,7 +302,7 @@ func (m *Manager) AddPiece(ctx context.Context, sector abi.SectorID, existingPie
 	t1 := time.Now()
 	defer func() {
 		t2 := time.Now()
-		log.Infof("dhkj %v AddPiece cast %v, [%v, %v]", sector, t2.Sub(t1).String(), t1.String(), t2.String())
+		log.Infof("dhkj %+v AddPiece cast %v, [%v, %v]", sector, t2.Sub(t1).String(), t1.String(), t2.String())
 	}()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -327,7 +328,7 @@ func (m *Manager) AddPiece(ctx context.Context, sector abi.SectorID, existingPie
 		t3 := time.Now()
 		p, err := w.AddPiece(ctx, sector, existingPieces, sz, r)
 		t4 := time.Now()
-		log.Infof("dhkj %v AddPiece real cast %v, [%v, %v]", sector, t4.Sub(t3).String(), t3.String(), t4.String())
+		log.Infof("dhkj %+v AddPiece real cast %v, [%v, %v]", sector, t4.Sub(t3).String(), t3.String(), t4.String())
 		if err != nil {
 			return err
 		}
@@ -339,10 +340,11 @@ func (m *Manager) AddPiece(ctx context.Context, sector abi.SectorID, existingPie
 }
 
 func (m *Manager) SealPreCommit1(ctx context.Context, sector abi.SectorID, ticket abi.SealRandomness, pieces []abi.PieceInfo) (out storage.PreCommit1Out, err error) {
+	log.Infof("dhkj %+v mgr SealPreCommit1 begin", sector)
 	t1 := time.Now()
 	defer func() {
 		t2 := time.Now()
-		log.Infof("dhkj %v SealPreCommit1 cast %v, [%v, %v]", sector, t2.Sub(t1).String(), t1.String(), t2.String())
+		log.Infof("dhkj %+v SealPreCommit1 cast %v, [%v, %v]", sector, t2.Sub(t1).String(), t1.String(), t2.String())
 	}()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -357,10 +359,11 @@ func (m *Manager) SealPreCommit1(ctx context.Context, sector abi.SectorID, ticke
 	selector := newAllocSelector(ctx, m.index, stores.FTCache|stores.FTSealed, stores.PathSealing)
 
 	err = m.sched.Schedule(ctx, sector, sealtasks.TTPreCommit1, selector, schedFetch(sector, stores.FTUnsealed, stores.PathSealing, stores.AcquireMove), func(ctx context.Context, w Worker) error {
+		log.Infof("dhkj %+v wrk SealPreCommit1 begin", sector)
 		t3 := time.Now()
 		p, err := w.SealPreCommit1(ctx, sector, ticket, pieces)
 		t4 := time.Now()
-		log.Infof("dhkj %v SealPreCommit1 real cast %v, [%v, %v]", sector, t4.Sub(t3).String(), t3.String(), t4.String())
+		log.Infof("dhkj %+v SealPreCommit1 real cast %v, [%v, %v]", sector, t4.Sub(t3).String(), t3.String(), t4.String())
 		if err != nil {
 			return err
 		}
@@ -378,10 +381,11 @@ func (m *Manager) SealPreCommit1(ctx context.Context, sector abi.SectorID, ticke
 }
 
 func (m *Manager) SealPreCommit2(ctx context.Context, sector abi.SectorID, phase1Out storage.PreCommit1Out) (out storage.SectorCids, err error) {
+	log.Infof("dhkj %+v mgr SealPreCommit2 begin", sector)
 	t1 := time.Now()
 	defer func() {
 		t2 := time.Now()
-		log.Infof("dhkj %v SealPreCommit2 cast %v, [%v, %v]", sector, t2.Sub(t1).String(), t1.String(), t2.String())
+		log.Infof("dhkj %+v SealPreCommit2 cast %v, [%v, %v]", sector, t2.Sub(t1).String(), t1.String(), t2.String())
 	}()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -398,10 +402,11 @@ func (m *Manager) SealPreCommit2(ctx context.Context, sector abi.SectorID, phase
 	}
 
 	err = m.sched.Schedule(ctx, sector, sealtasks.TTPreCommit2, selector, schedFetch(sector, stores.FTCache|stores.FTSealed, stores.PathSealing, stores.AcquireMove), func(ctx context.Context, w Worker) error {
+		log.Infof("dhkj %+v wrk SealPreCommit2 begin", sector)
 		t3 := time.Now()
 		p, err := w.SealPreCommit2(ctx, sector, phase1Out)
 		t4 := time.Now()
-		log.Infof("dhkj %v SealPreCommit2 real cast %v, [%v, %v]", sector, t4.Sub(t3).String(), t3.String(), t4.String())
+		log.Infof("dhkj %+v SealPreCommit2 real cast %v, [%v, %v]", sector, t4.Sub(t3).String(), t3.String(), t4.String())
 		if err != nil {
 			return err
 		}
@@ -412,10 +417,11 @@ func (m *Manager) SealPreCommit2(ctx context.Context, sector abi.SectorID, phase
 }
 
 func (m *Manager) SealCommit1(ctx context.Context, sector abi.SectorID, ticket abi.SealRandomness, seed abi.InteractiveSealRandomness, pieces []abi.PieceInfo, cids storage.SectorCids) (out storage.Commit1Out, err error) {
+	log.Infof("dhkj %+v mgr SealCommit1 begin", sector)
 	t1 := time.Now()
 	defer func() {
 		t2 := time.Now()
-		log.Infof("dhkj %v SealCommit1 cast %v, [%v, %v]", sector, t2.Sub(t1).String(), t1.String(), t2.String())
+		log.Infof("dhkj %+v SealCommit1 cast %v, [%v, %v]", sector, t2.Sub(t1).String(), t1.String(), t2.String())
 	}()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -434,10 +440,11 @@ func (m *Manager) SealCommit1(ctx context.Context, sector abi.SectorID, ticket a
 	}
 
 	err = m.sched.Schedule(ctx, sector, sealtasks.TTCommit1, selector, schedFetch(sector, stores.FTCache|stores.FTSealed, stores.PathSealing, stores.AcquireMove), func(ctx context.Context, w Worker) error {
+		log.Infof("dhkj %+v wrk SealCommit1 begin", sector)
 		t3 := time.Now()
 		p, err := w.SealCommit1(ctx, sector, ticket, seed, pieces, cids)
 		t4 := time.Now()
-		log.Infof("dhkj %v SealCommit1 real cast %v, [%v, %v]", sector, t4.Sub(t3).String(), t3.String(), t4.String())
+		log.Infof("dhkj %+v SealCommit1 real cast %v, [%v, %v]", sector, t4.Sub(t3).String(), t3.String(), t4.String())
 		if err != nil {
 			return err
 		}
@@ -448,19 +455,21 @@ func (m *Manager) SealCommit1(ctx context.Context, sector abi.SectorID, ticket a
 }
 
 func (m *Manager) SealCommit2(ctx context.Context, sector abi.SectorID, phase1Out storage.Commit1Out) (out storage.Proof, err error) {
+	log.Infof("dhkj %+v mgr SealCommit2 begin", sector)
 	t1 := time.Now()
 	defer func() {
 		t2 := time.Now()
-		log.Info("dhkj %v SealCommit2 cast %v, [%v, %v]", sector, t2.Sub(t1).String(), t1.String(), t2.String())
+		log.Info("dhkj %+v SealCommit2 cast %v, [%v, %v]", sector, t2.Sub(t1).String(), t1.String(), t2.String())
 	}()
 
 	selector := newTaskSelector()
 
 	err = m.sched.Schedule(ctx, sector, sealtasks.TTCommit2, selector, schedNop, func(ctx context.Context, w Worker) error {
+		log.Infof("dhkj %+v wrk SealCommit2 begin", sector)
 		t3 := time.Now()
 		p, err := w.SealCommit2(ctx, sector, phase1Out)
 		t4 := time.Now()
-		log.Infof("dhkj %v SealCommit2 real cast %v, [%v, %v]", sector, t4.Sub(t3).String(), t3.String(), t4.String())
+		log.Infof("dhkj %+v SealCommit2 real cast %v, [%v, %v]", sector, t4.Sub(t3).String(), t3.String(), t4.String())
 		if err != nil {
 			return err
 		}
@@ -472,10 +481,11 @@ func (m *Manager) SealCommit2(ctx context.Context, sector abi.SectorID, phase1Ou
 }
 
 func (m *Manager) FinalizeSector(ctx context.Context, sector abi.SectorID, keepUnsealed []storage.Range) error {
+	log.Infof("dhkj %+v mgr FinalizeSector begin", sector)
 	t1 := time.Now()
 	defer func() {
 		t2 := time.Now()
-		log.Infof("dhkj %v FinalizeSector cast %v, [%v, %v]", sector, t2.Sub(t1).String(), t1.String(), t2.String())
+		log.Infof("dhkj %+v FinalizeSector cast %v, [%v, %v]", sector, t2.Sub(t1).String(), t1.String(), t2.String())
 	}()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -519,6 +529,7 @@ func (m *Manager) FinalizeSector(ctx context.Context, sector abi.SectorID, keepU
 	err = m.sched.Schedule(ctx, sector, sealtasks.TTFinalize, selector,
 		schedFetch(sector, stores.FTCache|stores.FTSealed|unsealed, stores.PathSealing, stores.AcquireMove),
 		func(ctx context.Context, w Worker) error {
+			log.Infof("dhkj %+v wrk FinalizeSector begin", sector)
 			return w.FinalizeSector(ctx, sector, keepUnsealed)
 		})
 	if err != nil {
@@ -536,6 +547,7 @@ func (m *Manager) FinalizeSector(ctx context.Context, sector abi.SectorID, keepU
 	err = m.sched.Schedule(ctx, sector, sealtasks.TTFetch, fetchSel,
 		schedFetch(sector, stores.FTCache|stores.FTSealed|moveUnsealed, stores.PathStorage, stores.AcquireMove),
 		func(ctx context.Context, w Worker) error {
+			log.Infof("dhkj %+v wrk MoveStorage begin", sector)
 			return w.MoveStorage(ctx, sector)
 		})
 	if err != nil {

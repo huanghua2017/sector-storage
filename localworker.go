@@ -105,6 +105,9 @@ func (l *LocalWorker) NewSector(ctx context.Context, sector abi.SectorID) error 
 }
 
 func (l *LocalWorker) AddPiece(ctx context.Context, sector abi.SectorID, epcs []abi.UnpaddedPieceSize, sz abi.UnpaddedPieceSize, r io.Reader) (abi.PieceInfo, error) {
+	log.Infof("dhkj %+v AddPiece begin", sector)
+	defer log.Infof("dhkj %+v AddPiece end", sector)
+
 	sb, err := l.sb()
 	if err != nil {
 		return abi.PieceInfo{}, err
@@ -123,6 +126,9 @@ func (l *LocalWorker) Fetch(ctx context.Context, sector abi.SectorID, fileType s
 }
 
 func (l *LocalWorker) SealPreCommit1(ctx context.Context, sector abi.SectorID, ticket abi.SealRandomness, pieces []abi.PieceInfo) (out storage2.PreCommit1Out, err error) {
+	log.Infof("dhkj %+v SealPreCommit1 begin", sector)
+	defer log.Infof("dhkj %+v SealPreCommit1 end", sector)
+
 	{
 		// cleanup previous failed attempts if they exist
 		if err := l.storage.Remove(ctx, sector, stores.FTSealed, true); err != nil {
@@ -143,6 +149,9 @@ func (l *LocalWorker) SealPreCommit1(ctx context.Context, sector abi.SectorID, t
 }
 
 func (l *LocalWorker) SealPreCommit2(ctx context.Context, sector abi.SectorID, phase1Out storage2.PreCommit1Out) (cids storage2.SectorCids, err error) {
+	log.Infof("dhkj %+v SealPreCommit2 begin", sector)
+	defer log.Infof("dhkj %+v SealPreCommit2 end", sector)
+
 	sb, err := l.sb()
 	if err != nil {
 		return storage2.SectorCids{}, err
@@ -152,6 +161,9 @@ func (l *LocalWorker) SealPreCommit2(ctx context.Context, sector abi.SectorID, p
 }
 
 func (l *LocalWorker) SealCommit1(ctx context.Context, sector abi.SectorID, ticket abi.SealRandomness, seed abi.InteractiveSealRandomness, pieces []abi.PieceInfo, cids storage2.SectorCids) (output storage2.Commit1Out, err error) {
+	log.Infof("dhkj %+v SealCommit1 begin", sector)
+	defer log.Infof("dhkj %+v SealCommit1 end", sector)
+
 	sb, err := l.sb()
 	if err != nil {
 		return nil, err
@@ -161,6 +173,9 @@ func (l *LocalWorker) SealCommit1(ctx context.Context, sector abi.SectorID, tick
 }
 
 func (l *LocalWorker) SealCommit2(ctx context.Context, sector abi.SectorID, phase1Out storage2.Commit1Out) (proof storage2.Proof, err error) {
+	log.Infof("dhkj %+v SealCommit2 begin", sector)
+	defer log.Infof("dhkj %+v SealCommit2 end", sector)
+
 	sb, err := l.sb()
 	if err != nil {
 		return nil, err
@@ -170,6 +185,9 @@ func (l *LocalWorker) SealCommit2(ctx context.Context, sector abi.SectorID, phas
 }
 
 func (l *LocalWorker) FinalizeSector(ctx context.Context, sector abi.SectorID, keepUnsealed []storage2.Range) error {
+	log.Infof("dhkj %+v FinalizeSector begin", sector)
+	defer log.Infof("dhkj %+v FinalizeSector end", sector)
+
 	sb, err := l.sb()
 	if err != nil {
 		return err
@@ -209,6 +227,9 @@ func (l *LocalWorker) Remove(ctx context.Context, sector abi.SectorID) error {
 }
 
 func (l *LocalWorker) MoveStorage(ctx context.Context, sector abi.SectorID) error {
+	log.Infof("dhkj %+v MoveStorage begin", sector)
+	defer log.Infof("dhkj %+v MoveStorage end", sector)
+
 	if err := l.storage.MoveStorage(ctx, sector, l.scfg.SealProofType, stores.FTSealed|stores.FTCache); err != nil {
 		return xerrors.Errorf("moving sealed data to storage: %w", err)
 	}

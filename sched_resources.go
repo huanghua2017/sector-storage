@@ -11,7 +11,9 @@ func (a *activeResources) withResources(id WorkerID, wr storiface.WorkerResource
 		if a.cond == nil {
 			a.cond = sync.NewCond(locker)
 		}
+		log.Infof("dhkj %+v not enough resource", id)
 		a.cond.Wait()
+		log.Infof("dhkj %+v aweak", id)
 	}
 
 	a.add(wr, r)
