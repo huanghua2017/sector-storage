@@ -390,7 +390,7 @@ func (sh *scheduler) trySched() {
 					continue
 				}
 			}
-
+			log.Infof("dhkj sched assigned %+v, %s => %s", task.sector, task.taskType, sh.workers[wid].info.Hostname)
 			log.Debugf("SCHED ASSIGNED sqi:%d sector %d to window %d", sqi, task.sector.Number, wnd)
 
 			windows[wnd].allocated.add(wr, needRes)
@@ -405,6 +405,7 @@ func (sh *scheduler) trySched() {
 		}
 
 		windows[selectedWindow].todo = append(windows[selectedWindow].todo, task)
+		log.Infof("dhkj sched windows.todo len(todo)=%d task: %+v, %s", len(windows[selectedWindow].todo), task.sector, task.taskType)
 
 		sh.schedQueue.Remove(sqi)
 		sqi--
@@ -531,6 +532,8 @@ func (sh *scheduler) runWorker(wid WorkerID) {
 
 					if !ok {
 						sh.workersLk.RUnlock()
+						log.Warnf("dhkj %s activeWindows[0].todo[0] canHandleRequest, todo len=%d", worker.info.Hostname, len(activeWindows[0].todo))
+						time.Sleep(time.Second * 10)
 						break assignLoop
 					}
 
