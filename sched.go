@@ -23,7 +23,9 @@ var DefaultSchedPriority = 0
 var SelectorTimeout = 5 * time.Second
 
 var (
-	SchedWindows = 2
+	//SchedWindows = 2
+	// 窗口修改为1个
+	SchedWindows = 1
 )
 
 func getPriority(ctx context.Context) int {
