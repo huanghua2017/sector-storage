@@ -534,7 +534,7 @@ func (sh *scheduler) runWorker(wid WorkerID) {
 
 					if !ok {
 						sh.workersLk.RUnlock()
-						log.Warnf("dhkj %s activeWindows[0].todo[0] canHandleRequest, todo len=%d", worker.info.Hostname, len(activeWindows[0].todo))
+						log.Warnf("dhkj %s activeWindows[0].todo[0] canHandleRequest, todo len=%d, %+v", worker.info.Hostname, len(activeWindows[0].todo), activeWindows[0].todo)
 						time.Sleep(time.Second * 10)
 						break assignLoop
 					}
