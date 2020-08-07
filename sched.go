@@ -372,6 +372,17 @@ func (sh *scheduler) trySched() {
 				continue
 			}
 
+			// 把worker当前在做的资源消耗在做一次判断
+			pares := activeResources{
+				cpuUse:     sh.workers[wid].preparing.cpuUse + sh.workers[wid].active.cpuUse,
+				memUsedMax: sh.workers[wid].preparing.memUsedMax + sh.workers[wid].active.memUsedMax,
+				memUsedMin: sh.workers[wid].preparing.memUsedMin + sh.workers[wid].active.memUsedMin,
+				gpuUsed:    sh.workers[wid].active.gpuUsed,
+			}
+			if !pares.canHandleRequest(needRes, wid, wr) {
+				continue
+			}
+
 			// p1 任务分配特殊处理
 			if task.taskType == sealtasks.TTPreCommit1 {
 				ncnt := 1
@@ -392,6 +403,7 @@ func (sh *scheduler) trySched() {
 					continue
 				}
 			}
+
 			log.Infof("dhkj sched assigned %+v, %s => %s", task.sector, task.taskType, sh.workers[wid].info.Hostname)
 			log.Debugf("SCHED ASSIGNED sqi:%d sector %d to window %d", sqi, task.sector.Number, wnd)
 
