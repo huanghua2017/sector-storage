@@ -392,7 +392,7 @@ func (sh *scheduler) trySched() {
 				} else if gb > 500 && gb < 600 {
 					ncnt = 6
 				} else if gb > 900 {
-					ncnt = 12
+					ncnt = 14
 				}
 				//ncnt, _ := strconv.Atoi(os.Getenv("MAX_SECTORS_COUNT"))
 				ncpu := int(sh.workers[wid].preparing.cpuUse + sh.workers[wid].active.cpuUse + windows[wnd].allocated.cpuUse)
