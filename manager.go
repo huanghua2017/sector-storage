@@ -215,7 +215,8 @@ func (m *Manager) ReadPiece(ctx context.Context, sink io.Writer, sector abi.Sect
 		return xerrors.Errorf("acquiring sector lock: %w", err)
 	}
 
-	best, err := m.index.StorageFindSector(ctx, sector, stores.FTUnsealed, false)
+	// passing 0 spt because we only need it when allowFetch is true
+	best, err := m.index.StorageFindSector(ctx, sector, stores.FTUnsealed, 0, false)
 	if err != nil {
 		return xerrors.Errorf("read piece: checking for already existing unsealed sector: %w", err)
 	}
@@ -492,7 +493,7 @@ func (m *Manager) FinalizeSector(ctx context.Context, sector abi.SectorID, keepU
 
 	unsealed := stores.FTUnsealed
 	{
-		unsealedStores, err := m.index.StorageFindSector(ctx, sector, stores.FTUnsealed, false)
+		unsealedStores, err := m.index.StorageFindSector(ctx, sector, stores.FTUnsealed, 0, false)
 		if err != nil {
 			return xerrors.Errorf("finding unsealed sector: %w", err)
 		}
@@ -550,7 +551,7 @@ func (m *Manager) Remove(ctx context.Context, sector abi.SectorID) error {
 
 	unsealed := stores.FTUnsealed
 	{
-		unsealedStores, err := m.index.StorageFindSector(ctx, sector, stores.FTUnsealed, false)
+		unsealedStores, err := m.index.StorageFindSector(ctx, sector, stores.FTUnsealed, 0, false)
 		if err != nil {
 			return xerrors.Errorf("finding unsealed sector: %w", err)
 		}
